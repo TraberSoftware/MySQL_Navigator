@@ -5,7 +5,7 @@ PHP Script to access and navigate through your MySQL server databases and tables
 
 ## Description
 
-Is a simple script to access your databases and display the tables from such databases. Enable JavaScript is higly recommended in order to some tricks to work ;).
+Is a simple script to access your databases and display the tables from such databases. Enable JavaScript is highly recommended in order to some tricks to work ;).
 
 What does it use:
  * JQuery
