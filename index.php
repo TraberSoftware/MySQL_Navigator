@@ -23,16 +23,19 @@
 			printDatabases();
 		}
 
-		function printTable($database, $table){
-			mysql_select_db('$database'); 
+		function printTable($database, $table){			
+			$sql='';	
+			$columnQuery = "select * from $table limit 0, 1";
 			$columnNames = array();
-			$columQueryString = "SELECT column_name FROM information_schema.columns WHERE table_name = '$table' order by ordinal_position";
-			$columnQuery = mysql_query($columQueryString);
-			while ($row = mysql_fetch_array($columnQuery)) {
-				$columnNames[] = $row['column_name'];
+			mysql_query("USE ".$database);
+			$columnQuery = mysql_query($columnQuery);
+			if (mysql_num_rows($columnQuery)>0){
+				$row = mysql_fetch_array($columnQuery);
+				foreach($row as $key => $value){
+					if (!is_numeric($key)) $columnNames[] = $key;
+				}
 			}
 			
-			$sql = '';
 			if (isset($_GET['sort'])){
 				$sortCriteria = $columnNames[$_GET['sort']];
 				if (isset($_GET['desc'])) {
@@ -43,31 +46,34 @@
 			else{
 				$sql="select * from $table";	
 			}
-			
-			mysql_select_db($database); 
+						
 			$query = mysql_query($sql);
 			echo "<div id=\"toolbar_top_left\" onclick=\"javascript:(document.location='".$_SERVER["SCRIPT_NAME"]."?database=".$database."');\"><a href=\"".$_SERVER["SCRIPT_NAME"]."?database=".$database."\">Atr&aacute;s</a></div>";
 			echo "<div id=\"toolbar_top_right\" onclick=\"javascript:(document.location='#top');\"><a href=\"#top\">Arriba</a></div>";
 	
 			echo ("<table id=\"container-table\">");
-			echo ("<caption><a name=\"#top\">Tabla \"".$table."\"<br/>Base de datos \"".$database."\"</a></caption>");
+			echo ("<caption><a name=\"#top\" >Tabla \"".$table."\"<br/>Base de datos \"".$database."\"</a></caption>");
 			echo ("<tr id=\"header\">");	
-				for ($i=0; $i<count($columnNames); $i++){
-					echo "<td class=\"header\"><a href=\"".$_SERVER["SCRIPT_NAME"]."?database=".$database."&table=".$table."&sort=".$i.((isset($_GET['sort']) && $_GET['sort']==$i && !isset($_GET['desc']))?"&desc":"")."\">".$columnNames[$i].((isset($_GET['sort']) && $_GET['sort']==$i && !isset($_GET['desc']))?"&#x25B2;":"&#x25BC;")."</a></td>";
-				}
+			for ($i=0; $i<count($columnNames); $i++){
+				echo "<td class=\"header\"><a href=\"".$_SERVER["SCRIPT_NAME"]."?database=".$database."&table=".$table."&sort=".$i.((isset($_GET['sort']) && $_GET['sort']==$i && !isset($_GET['desc']))?"&desc":"")."\">".$columnNames[$i].((isset($_GET['sort']) && $_GET['sort']==$i && !isset($_GET['desc']))?"&#x25B2;":"&#x25BC;")."</a></td>";
+			}
 			echo ("</tr>");
 			if (mysql_num_rows($query)>0){
 				$j=0;
 				while ($row = mysql_fetch_array($query)){
 					echo ("<tr class=\"row\">");
-					for ($i=0; $i<count($columnNames); $i++){
-						echo "<td class=\"".(($i>0)?"leftbar ":"").((($j%2)==0)?"pair ":"unpair ").((isset($_GET['sort']) && $_GET['sort']==$i)?" highlighted":"")."\">".@$row[$columnNames[$i]]."</a></td>";
+					$i = 0;
+					foreach($row as $key => $value){
+						if (!is_numeric($key)){
+							echo "<td class=\"".(($i>0)?"leftbar ":"").((($j%2)==0)?"pair ":"unpair ").((isset($_GET['sort']) && $_GET['sort']==$i)?" highlighted":"")."\">".@$row[$key]."</a></td>";
+							$i++;
+						}
 					}
-					echo ("</tr>");
 					$j++;
+					echo ("</tr>");
 				}	
 			}else{
-				echo "<tr><td colspan=\"".count($columnNames)."\" class=\"empty\">Tabla vac&iacute;a</td></tr>";
+				echo "<tr class=\"empty\"><td colspan=\"".count($columnNames)."\">Tabla vac&iacute;a</td></tr>";
 			}
 			echo "</table>";
 			
@@ -101,7 +107,7 @@
 			echo "<div id=\"toolbar_top_left\" onclick=\"javascript:(document.location='".$_SERVER["SCRIPT_NAME"]."');\"><a href=\"".$_SERVER["SCRIPT_NAME"]."\">Atr&aacute;s</a></div>";
 			echo "<div id=\"toolbar_top_right\" onclick=\"javascript:(document.location='#top');\"><a href=\"#top\">Arriba</a></div>";
 			echo ("<table>");
-			echo ("<caption><a name=\"#top\">Base de datos (".$database.")</a></caption>");
+			echo ("<caption><a name=\"#top\" >Base de datos (".$database.")</a></caption>");
 			if (count($tables)>0){
 				for ($i=0; $i<count($tables); $i++){
 					echo ("<tr class=\"row\">");
@@ -109,7 +115,7 @@
 					echo ("</tr>");
 				}
 			}else{
-				echo "<tr><td colspan=\"".count($tables)."\" class=\"empty\">Base de datos vac&iacute;a</td></tr>";
+				echo "<tr class=\"empty\"><td colspan=\"".count($tables)."\" >Base de datos vac&iacute;a</td></tr>";
 			}
 			echo "</table>";
 			mysql_free_result($tablesQuery);
@@ -124,7 +130,7 @@
 			}
 			echo "<div id=\"toolbar_top_right\" onclick=\"javascript:(document.location='#top');\"><a href=\"#top\">Arriba</a></div>";
 			echo ("<table>");
-			echo ("<caption><a name=\"#top\">Bases de datos</a></caption>");
+			echo ("<caption><a name=\"#top\" >Bases de datos</a></caption>");
 			for ($i=0; $i<count($databases); $i++){
 				echo ("<tr class=\"row\">");
 				echo "<td onclick=\"javascript:(document.location='".$_SERVER["SCRIPT_NAME"]."?database=".$databases[$i]."');\" class=\"".(($i>0)?"leftbar ":"").((($i%2)==0)?"pair ":"unpair ")."\"><a href=\"".$_SERVER["SCRIPT_NAME"]."?database=".$databases[$i]."\">".$databases[$i]."</a></td>";
@@ -140,9 +146,10 @@
 		var tableOffset = $("#header").offset().top;
 		var $header = $("#container-table > thead").clone();
 		var $fixedHeader = $("#header-fixed").append($header);
+		var $upButton = $("#toolbar_top_right");
 		var rowWidth = $('#header').width();
 		$('#header-fixed').css({ width: rowWidth+"px"});
-		var leftOffset = ($("#container-table").offset().left); //Grab the left position left first
+		var leftOffset = ($("#container-table").offset().left);
 
 		$(function(){
 			var counter = 0;
@@ -162,6 +169,12 @@
 		    }
 		    else if (offset < tableOffset) {
 		        $fixedHeader.hide();
+		    }
+		    if (offset >= tableOffset && $upButton.is(":hidden")) {
+		        $upButton.show();
+		    }
+		    else if (offset < tableOffset) {
+		        $upButton.hide();
 		    }
 		    $('#header-fixed').css({
         		'left': -($(this).scrollLeft()-leftOffset)

@@ -16,6 +16,7 @@ caption{
 }
 
 #toolbar_top_right{
+	display:none;
 	position:fixed;
 	top:32px;
 	right:12px;
@@ -79,10 +80,17 @@ caption{
 
 .empty{
 	text-align:center;
-	background:lightblue;
+	background-color:lightblue;
 	color:white;
 	font-size:22px;
-	padding:4px;
+}
+
+.empty td{
+	background-color:lightblue;
+}
+
+.empty td:before, .empty td:after{
+	content:' - ';
 }
 
 /*.header a:before{
@@ -131,8 +139,6 @@ table{
 	font-size:10;
 	font-weight:bold;
 	min-width:60%;
-	border-bottom-left-radius:10px;
-	border-bottom-right-radius:10px;
 	border-collapse:collapse;
 	border-left-style:solid;
 	border-left-color:lightblue;
@@ -144,6 +150,13 @@ table{
 
 tr{
 	border-bottom:lightblue solid 2px;
+}
+
+#container-table{
+	box-shadow: 6px 6px 10px #333;
+	-webkit-box-shadow: 6px 6px 10px #333;
+	-moz-box-shadow: 6px 6px 10px #333;
+	border:lightblue solid 2px;
 }
 
 .row:hover td{
